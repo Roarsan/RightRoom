@@ -9,7 +9,7 @@ const listController = {
   // Get a single listing by ID
   showListingDetails: async (req, res) => {
     const list = await listService.getListingById(req.params.id);
-    res.render('listings/listingDetail', { list, MAPS_API_KEY: process.env.MAPS_API_KEY });
+    res.render('listings/listingDetail', { list });
   },
 
   // Render "Create listing" form
