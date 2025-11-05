@@ -1,6 +1,7 @@
 const listService = require('../services/listService');
 
 const listController = {
+  // Get all listings
   getAllListings: async (req, res) => {
     const listings = await listService.getAllListings();
     res.render('listings/listings', { listings });
@@ -9,7 +10,7 @@ const listController = {
   // Get a single listing by ID
   showListingDetails: async (req, res) => {
     const list = await listService.getListingById(req.params.id);
-    res.render('listings/listingDetail', { list });
+    res.render('listings/listingDetail', { list, mapsApiKey: process.env.MAPS_API_KEY });
   },
 
   // Render "Create listing" form
@@ -17,9 +18,10 @@ const listController = {
     res.render('listings/createlisting');
   },
 
-  // Create new listing
+  // Create a new listing
   createListing: async (req, res) => {
     const { title, image, address, price, description } = req.body;
+
     await listService.createListing({
       title,
       image,
@@ -42,6 +44,7 @@ const listController = {
   // Update listing
   updateListing: async (req, res) => {
     const { title, image, address, price, description } = req.body;
+
     await listService.updateListing(req.params.id, {
       title,
       image,
@@ -49,6 +52,7 @@ const listController = {
       price,
       description,
     });
+
     req.flash("success", "Listing updated successfully!");
     res.redirect(`/list/${req.params.id}`);
   },
@@ -60,6 +64,5 @@ const listController = {
     res.redirect('/list/listing');
   },
 };
-
 
 module.exports = listController;
