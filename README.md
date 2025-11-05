@@ -24,6 +24,7 @@ Visit `http://localhost:8080` after running the application to see the live demo
 - **Bootstrap 5.3.3** — CSS framework for responsive design
 - **Custom CSS** — SpareRoom-inspired styling with blue/white theme
 - **Vanilla JavaScript** — Client-side interactions and form validation
+- **Google Maps JavaScript API** — Interactive map display for property locations
 
 ### Database
 - **MongoDB** — NoSQL database for storing property listings
@@ -33,20 +34,23 @@ Visit `http://localhost:8080` after running the application to see the live demo
 
 ### Core Functionality
 - ✅ **View All Listings** — Grid layout with property cards
-- ✅ **View Single Listing** — Detailed property information
+- ✅ **View Single Listing** — Detailed property information with optional map view
 - ✅ **Create New Listing** — Add properties with form validation
 - ✅ **Edit Listing** — Update existing property information
 - ✅ **Delete Listing** — Remove properties with confirmation
+- ✅ **User Authentication** — Register, login, and logout functionality
+- ✅ **Authorization** — Owner-only access to modify listings
 - ✅ **Session Management** — Secure session handling with MongoDB store
-- ✅ **Environment Configuration** — Secure environment variable management
+- ✅ **Environment Configuration** — Secure environment variable validation
 - ✅ **Responsive Design** — Mobile-first Bootstrap layout
-- ✅ **Error Handling** — Comprehensive error management
-- ✅ **Input Validation** — Server-side validation with Joi
+- ✅ **Error Handling** — Comprehensive error management with custom error pages
+- ✅ **Input Validation** — Server-side validation with Joi schemas
 
 ### UI/UX Features
 - 🎨 **Modern Design** — Clean, SpareRoom-inspired interface
 - 📱 **Responsive Layout** — Works on all device sizes
 - 🖼️ **Property Cards** — Beautiful card-based listing display
+- 🗺️ **Interactive Maps** — Google Maps integration for property locations
 - 🎯 **Intuitive Navigation** — Easy-to-use navigation system
 - ⚡ **Fast Loading** — Optimized for performance
 - 🎨 **Custom Styling** — Professional blue/white color scheme
@@ -76,26 +80,45 @@ npm install
 ### 2. Environment Setup
 Create a `.env` file in the root directory:
 ```bash
+# Server Configuration
 PORT=8080
+
+# Database Configuration
 MONGO_URL=mongodb://127.0.0.1:27017/spare_room
+
+# Session Configuration
 SESSION_SECRET=your-super-secret-session-key-change-this-in-production
+
+# Environment
 NODE_ENV=development
+
+# Optional: Google Maps API Key (for map feature)
+# Get your key from: https://console.cloud.google.com/google/maps-apis
+# If not provided, the map feature will be disabled
+MAPS_API_KEY=your-google-maps-api-key-here
 ```
+
+**Note**: The application validates required environment variables (`MONGO_URL`, `SESSION_SECRET`) at startup. If any are missing, the app will exit with an error message.
 
 ### 3. Database Setup
 This clears the collection and inserts a few sample listings.
 ```bash
-# Seed the database with sample data
-nodemon models/init/initDB.js
+# Using npm script
+npm run init-db
+
+# Or directly with node
+node initDB/initDB.js
 ```
+
+This clears the collection and inserts a few sample listings.
 
 ### 4. Start the Application
 ```bash
-# Development mode with auto-restart
-nodemon app.js
+# Development mode with auto-restart (recommended)
+npm run dev
 
-# Or production mode
-node app.js
+# Production mode
+npm start
 ```
 
 ### 5. Access the Application
@@ -111,8 +134,20 @@ Open your browser and navigate to: `http://localhost:8080`
   address: String (required)      // Property address
   description: String (required)  // Property description
   price: Number (required, min: 0) // Monthly rent price
+  owner: ObjectId (required)      // Reference to User who created the listing
   createdAt: Date (auto-generated) // Creation timestamp
   updatedAt: Date (auto-generated) // Last update timestamp
+}
+```
+
+### User Model
+```javascript
+{
+  username: String (required, unique)  // User's username
+  email: String (required, unique)      // User's email (lowercase, trimmed)
+  password: String (required)           // Hashed password (bcrypt)
+  createdAt: Date (auto-generated)      // Creation timestamp
+  updatedAt: Date (auto-generated)      // Last update timestamp
 }
 ```
 
@@ -153,7 +188,8 @@ SpareRoom/
 ├── config/
 │   ├── connectDB.js           # MongoDB connection configuration
 │   ├── session.js             # Session configuration
-│   └── flash.js               # Flash messages setup
+│   ├── flash.js               # Flash messages setup
+│   └── validateEnv.js         # Environment variable validation
 ├── controllers/
 │   ├── authController.js      # Auth views and session control
 │   └── listController.js      # Listing operations
@@ -174,6 +210,7 @@ SpareRoom/
 │   ├── css/
 │   │   └── main.css           # Custom styling
 │   └── js/
+│       ├── map.js             # Google Maps integration
 │       └── script.js          # Client-side JavaScript
 ├── routes/
 │   ├── authRoutes.js          # Auth routes
@@ -198,7 +235,8 @@ SpareRoom/
         ├── listingDetail.ejs  # Single listing detail view
         ├── createlisting.ejs  # Create listing form
         ├── updatelisting.ejs  # Edit listing form
-        └── deletelisting.ejs  # Delete confirmation view
+        ├── deletelisting.ejs  # Delete confirmation view
+        └── map.ejs            # Map modal partial for property location
 ```
 
 ## 🔧 Architecture & Patterns
@@ -245,27 +283,42 @@ SpareRoom/
 ## 🚀 Development
 
 ### Environment Variables
-```bash
-PORT=8080                                    # Server port
-MONGO_URL=mongodb://127.0.0.1:27017/spare_room  # MongoDB connection
-SESSION_SECRET=your-super-secret-session-key-change-this-in-production  # Session secret
-NODE_ENV=development                         # Environment mode
-```
 
-### Development Scripts
+#### Required Variables
+- `PORT` — Server port (defaults to 8080 if not set)
+- `MONGO_URL` — MongoDB connection string
+- `SESSION_SECRET` — Secret key for session encryption
+- `MAPS_API_KEY` — Google Maps API key for map feature 
+
+#### Optional Variables
+- `NODE_ENV` — Environment mode (`development` or `production`)
+
+**Note**: The application validates required environment variables at startup. If `MONGO_URL`,`MAPS_API_KEY` and `SESSION_SECRET` are missing, the app will exit with an error message.
+
+**Security Note**: 
+- In production, set `NODE_ENV=production` to enable secure session cookies
+- The `MAPS_API_KEY` is exposed client-side. If using Google Maps, restrict the API key in Google Cloud Console to your domain only.
+
+### Available npm Scripts
 ```bash
 # Install dependencies
 npm install
 
-# Seed database
-nodemon models/init/initDB.js
-
-# Start development server
-nodemon app.js
+# Start development server (with auto-restart)
+npm run dev
 
 # Start production server
-node app.js
+npm start
+
+# Seed database with sample data
+npm run init-db
 ```
+
+### Development Scripts
+The application uses npm scripts for consistency. All scripts are defined in `package.json`:
+- `npm start` — Run in production mode
+- `npm run dev` — Run in development mode with nodemon
+- `npm run init-db` — Seed database with sample listings
 
 ## 🌐 Routes
 | Method | Route                      | Handler                         | Description                 |
@@ -278,6 +331,31 @@ node app.js
 | GET    | `/list/:id/editlisting`    | `editListing`                   | Show edit form              |
 | PUT    | `/list/:id`                | `updateListing`                 | Update listing              |
 | DELETE | `/list/:id`                | `deleteListing`                 | Delete listing              |
+
+## 🔒 Security Considerations
+
+### Session Security
+- Sessions are stored in MongoDB for persistence
+- Secure cookies are enabled in production (`NODE_ENV=production`)
+- `httpOnly` flag prevents client-side JavaScript access
+- `sameSite: 'strict'` provides CSRF protection
+
+### Input Validation
+- All user input is validated using Joi schemas
+- EJS templates automatically escape HTML to prevent XSS attacks
+- Password hashing uses bcrypt with 12 salt rounds
+
+### API Key Security
+- If using Google Maps API key, **restrict it in Google Cloud Console**:
+  - Set HTTP referrer restrictions to your domain
+  - Limit API usage to prevent abuse
+  - Monitor usage in Google Cloud Console
+
+### Best Practices
+- Never commit `.env` files to version control
+- Use strong, unique `SESSION_SECRET` in production
+- Keep dependencies updated regularly
+- Review security recommendations in `CODE_REVIEW_CURRENT.md`
 
 ## 📞 Support
 

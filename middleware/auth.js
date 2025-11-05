@@ -1,5 +1,6 @@
 const List = require("../models/listModel");
-//checks the session for 
+
+// Checks the session for userId to verify if user is logged in
 module.exports.isLoggedIn = function isLoggedIn(req, res, next) {
     if (!req.session || !req.session.userId) {
       req.flash("error", "You must be signed in!");
@@ -8,11 +9,19 @@ module.exports.isLoggedIn = function isLoggedIn(req, res, next) {
     next();
 };
 
+// Verifies that the current user is the owner of the listing
 module.exports.isOwner = async function isOwner(req, res, next) {
     const { id } = req.params;
     const list = await List.findById(id);
 
-    if ( String(list.owner) !== String(req.session.userId)) {
+    // Check if listing exists
+    if (!list) {
+      req.flash("error", "Listing not found");
+      return res.redirect('/list/listing');
+    }
+
+    // Check if user is the owner
+    if (String(list.owner) !== String(req.session.userId)) {
       req.flash("error", "Not authorized to modify this listing");
       return res.redirect(`/list/${id}`);
     }

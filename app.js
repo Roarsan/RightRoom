@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require("express");
+const validateEnv = require("./config/validateEnv");
 const connectDB = require("./config/connectDB");
 const methodOverride = require("method-override");
 const auth_Routes = require("./routes/authRoutes.js");
@@ -7,6 +8,9 @@ const list_Routes = require("./routes/listRoutes.js");
 const setupSession = require('./config/session');
 const setupFlash = require('./config/flash');
 const ExpressError = require('./utils/ExpressError');
+
+// Validate environment variables before starting
+validateEnv();
 
 const app = express();
 
@@ -47,7 +51,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`🚀 Server listening on port ${PORT}`);
 });

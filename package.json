@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "description": "A modern property listings web application with user authentication",
   "main": "app.js",
-  "scripts": {},
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "init-db": "node initDB/initDB.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

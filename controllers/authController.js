@@ -18,10 +18,6 @@ const authController = {
 
   loginUser: async (req, res) => {
     const user = await authService.authenticateUser(req.body);
-    if (!user) {
-      req.flash("error", "User not found");
-      return res.redirect("/auth/login");
-    }
     req.session.userId = user._id;
     req.flash("success", "Welcome back!");
     res.redirect("/list/listing");
