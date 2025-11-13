@@ -1,8 +1,8 @@
-# 🏠 SpareRoom Clone
+# 🏠 RightRoom
 
 A modern property listings web application inspired by [SpareRoom.co.uk](https://www.spareroom.co.uk).  
 Built with **Express.js**, **MongoDB**, and **EJS**, following clean MVC architecture with **Bootstrap 5** styling and custom CSS.  
-A fully functional CRUD application for managing property listings with responsive design and comprehensive error handling.
+A fully functional application for managing property listings with responsive design and comprehensive error handling.
 
 ## ✨ Live Demo
 Visit `http://localhost:8080` after running the application to see the live demo.
@@ -45,6 +45,8 @@ Visit `http://localhost:8080` after running the application to see the live demo
 - ✅ **Responsive Design** — Mobile-first Bootstrap layout
 - ✅ **Error Handling** — Comprehensive error management with custom error pages
 - ✅ **Input Validation** — Server-side validation with Joi schemas
+- ✅ **User Profiles** — View public landlord/tenant profiles populated from MongoDB
+- ✅ **Peer Reviews** — Authenticated users can leave 1–5 star reviews with comments
 
 ### UI/UX Features
 - 🎨 **Modern Design** — Clean, SpareRoom-inspired interface
@@ -73,7 +75,7 @@ Default connection string: `mongodb://127.0.0.1:27017/spare_room`
 ### 1. Clone and Install
 ```bash
 git clone <repository-url>
-cd SpareRoom
+cd RightRoom
 npm install
 ```
 
@@ -179,10 +181,16 @@ The application comes with 3 sample listings:
 | POST | `/auth/loginUser` | `loginUser` | Login a user |
 | POST | `/auth/logout` | `logout` | Logout current user |
 
+### Profile & Review Routes
+| Method | Route | Handler | Middleware | Description |
+|--------|-------|---------|------------|-------------|
+| GET | `/profile/:id` | renderProfile | - | Render a user's public profile with aggregated review data |
+| POST | `/profile/reviews/:id` | submitReviews | isLoggedIn, validate(reviewSchema) | Create a review targeting the specified user |
+
 ## 🧱 Project Structure
 
 ```
-SpareRoom/
+RightRoom/
 ├── app.js                      # Main application entry point
 ├── package.json                # Dependencies and scripts
 ├── config/
@@ -192,17 +200,21 @@ SpareRoom/
 │   └── validateEnv.js         # Environment variable validation
 ├── controllers/
 │   ├── authController.js      # Auth views and session control
-│   └── listController.js      # Listing operations
+│   ├── listController.js      # Listing operations
+│   ├── profileController.js   # Profile aggregation
+│   └── reviewController.js    # Review submission flow
 ├── initDB/
 │   └── initDB.js              # Database initialization script
 ├── joiSchemas/
 │   ├── listSchema.js          # Joi validation schema for listings
+│   ├── reviewSchema.js        # Joi validation schema for reviews
 │   └── userSchema.js          # Joi validation schema for users
 ├── middleware/
 │   ├── auth.js                # isLoggedIn and isOwner guards
 │   └── validateSchema.js      # Generic Joi validator
 ├── models/
 │   ├── listModel.js           # Mongoose schema for listings
+│   ├── reviewModel.js         # Mongoose schema for reviews
 │   ├── sampleData/
 │   │   └── sampleData.js      # Sample property data
 │   └── userModel.js           # Mongoose schema for users
@@ -217,7 +229,8 @@ SpareRoom/
 │   └── listRoutes.js          # Listing routes
 ├── services/
 │   ├── listService.js         # Listing DB operations
-│   └── userService.js         # User auth logic
+│   ├── profileService.js      # Profile lookups
+│   └── reviewService.js       # Review aggregation and persistence
 ├── utils/
 │   ├── ExpressError.js        # Custom error class
 │   ├── httpStatus.js          # HTTP status helpers
@@ -231,12 +244,15 @@ SpareRoom/
     │   ├── login.ejs          # Login view
     │   └── register.ejs       # Register view
     └── listings/
-        ├── listings.ejs       # All listings grid view
-        ├── listingDetail.ejs  # Single listing detail view
-        ├── createlisting.ejs  # Create listing form
-        ├── updatelisting.ejs  # Edit listing form
-        ├── deletelisting.ejs  # Delete confirmation view
-        └── map.ejs            # Map modal partial for property location
+    │   ├── listings.ejs       # All listings grid view
+    │   ├── listingDetail.ejs  # Single listing detail view
+    │   ├── createlisting.ejs  # Create listing form
+    │   ├── updatelisting.ejs  # Edit listing form
+    │   ├── deletelisting.ejs  # Delete confirmation view
+    │   └── map.ejs            # Map modal partial for property location
+    └── profile/
+        ├── profile.ejs        # Profile detail view
+        └── reviewProfile.ejs  # Review submission view
 ```
 
 ## 🔧 Architecture & Patterns
@@ -320,17 +336,6 @@ The application uses npm scripts for consistency. All scripts are defined in `pa
 - `npm run dev` — Run in development mode with nodemon
 - `npm run init-db` — Seed database with sample listings
 
-## 🌐 Routes
-| Method | Route                      | Handler                         | Description                 |
-| ------ | -------------------------- | --------------------------------| --------------------------- |
-| GET    | `/`                        | inline in `app.js`              | Welcome page                |
-| GET    | `/list`                    | `getAllListings`                | Show all listings           |
-| GET    | `/list/newlisting`         | `newListing`                    | Show create form            |
-| POST   | `/list/createlisting`      | `createListing`                 | Create a new listing        |
-| GET    | `/list/:id`                | `showListingDetails`            | Show listing details        |
-| GET    | `/list/:id/editlisting`    | `editListing`                   | Show edit form              |
-| PUT    | `/list/:id`                | `updateListing`                 | Update listing              |
-| DELETE | `/list/:id`                | `deleteListing`                 | Delete listing              |
 
 ## 🔒 Security Considerations
 
@@ -367,6 +372,6 @@ For questions or issues:
 ---
 
 **Version**: 1.0.0  
-**Last Updated**: October 2025  
+**Last Updated**: March 2025  
 **Node.js**: 18+  
 **MongoDB**: Latest

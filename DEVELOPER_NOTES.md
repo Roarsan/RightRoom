@@ -1,4 +1,4 @@
-# 🏠 SpareRoom Clone - Developer Notes
+# 🏠 RightRoom - Developer Notes
 
 ## 📋 Project Overview
 A modern property listings web application inspired by SpareRoom.co.uk, built with Node.js, Express, MongoDB, and EJS templating. The application follows clean MVC architecture and provides comprehensive CRUD operations for property listings with responsive design, error handling, and input validation.
@@ -76,12 +76,17 @@ SpareRoom/
     │   ├── login.ejs
     │   └── register.ejs
     └── listings/
-        ├── listings.ejs
-        ├── listingDetail.ejs
-        ├── createlisting.ejs
-        ├── updatelisting.ejs
-        ├── deletelisting.ejs
-        └── map.ejs              # Map modal partial for property location
+    │    ├── listings.ejs
+    │    ├── listingDetail.ejs
+    │    ├── createlisting.ejs
+    │    ├── updatelisting.ejs
+    │    ├── deletelisting.ejs
+    │    ├── map.ejs              # Map modal partial for property location
+    │    ├── footer.ejs
+    │    └── navbar.ejs
+    └── profile/
+        ├── profile.ejs        # Profile overview + aggregated reviews
+        └── reviewProfile.ejs  # Review submission form (modal)
 ```
 
 ## 🗄️ Database Schema
@@ -133,6 +138,13 @@ SpareRoom/
 | POST | `/auth/loginUser` | loginUser | validate(loginSchema) | Authenticate user |
 | POST | `/auth/logout` | logout | - | Logout current user |
 
+### Profile & Review Routes
+| Method | Route | Handler | Middleware | Description |
+|--------|-------|---------|------------|-------------|
+| GET | `/profile/:id` | renderProfile | - | Render a user's public profile with aggregated review data |
+| POST | `/profile/reviews/:id` | submitReviews | isLoggedIn, validate(reviewSchema) | Create a review targeting the specified user |
+
+
 ## 🔧 Key Components
 
 ### Error Handling System
@@ -157,11 +169,13 @@ SpareRoom/
 - **Joi Schemas**: Server-side validation for all form inputs
   - `listSchema.js` - Validates listing data (title, image, address, price, description)
   - `userSchema.js` - Validates user registration and login data
+  - `reviewSchema.js` - Validates review submission payloads
 - **Validation Rules**:
   - Listing: title (min 3 chars), image (URI), price (min 0), required fields
   - User: username (3-30 chars), email (valid format), password (min 6 chars)
 - **Error Handling**: Validation errors thrown as `ExpressError` with 400 status
 - **Middleware**: `validateSchema.js` middleware applies Joi validation before route handlers
+
 
 ### XSS Prevention
 - **EJS Escaping**: EJS automatically escapes HTML when using `<%=` syntax
@@ -224,7 +238,7 @@ SpareRoom/
 ```bash
 # Clone and install
 git clone <repository-url>
-cd SpareRoom
+cd RightRoom
 npm install
 
 # Environment setup
@@ -497,6 +511,6 @@ NODE_ENV=development  # Environment mode (development or production)
 ---
 
 **Version**: 1.0.0  
-**Last Updated**: October 2025  
+**Last Updated**: November 2025  
 **Node.js**: 18+  
 **MongoDB**: Latest
