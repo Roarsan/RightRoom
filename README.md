@@ -45,6 +45,8 @@ Visit `http://localhost:8080` after running the application to see the live demo
 - ✅ **Responsive Design** — Mobile-first Bootstrap layout
 - ✅ **Error Handling** — Comprehensive error management with custom error pages
 - ✅ **Input Validation** — Server-side validation with Joi schemas
+- ✅ **User Profiles** — View public landlord/tenant profiles populated from MongoDB
+- ✅ **Peer Reviews** — Authenticated users can leave 1–5 star reviews with comments
 
 ### UI/UX Features
 - 🎨 **Modern Design** — Clean, SpareRoom-inspired interface
@@ -54,6 +56,16 @@ Visit `http://localhost:8080` after running the application to see the live demo
 - 🎯 **Intuitive Navigation** — Easy-to-use navigation system
 - ⚡ **Fast Loading** — Optimized for performance
 - 🎨 **Custom Styling** — Professional blue/white color scheme
+## 🔍 Branch Review Summary (`work`)
+
+The current branch was reviewed to surface high-priority technical findings for the next iteration:
+
+- ⚠️ **Missing error imports in review services** — `services/reviewService.js` references `ExpressError` and `httpStatus` without importing them, which will raise a `ReferenceError` the first time that branch executes (for example, if no reviews are returned). A guard clause or proper import should be added.
+- ⚠️ **Average rating can become `NaN`** — When a profile has zero reviews, `total / reviewCount` divides by zero and EJS receives `NaN`. Add a fallback of `0` (or `null`) before rendering to avoid confusing UI output.
+- ⚠️ **Unused dependency** — `controllers/reviewController.js` imports `express-session` but never uses it; remove the import to keep bundle size lean.
+- ⚠️ **Profile fetch is unguarded** — `controllers/profileController.js` calls `reviewService.getReviews` immediately after fetching a user; if the user lookup fails, the second query still runs. Exit early after throwing the 404 from `profileService` to prevent double queries.
+- 📝 **Documentation drift** — Prior README sections referenced a `CODE_REVIEW_CURRENT.md` file that no longer exists and omitted newly added profile/review endpoints. This document now reflects the active routes and dependencies.
+
 
 ## ✅ Prerequisites
 
@@ -73,7 +85,7 @@ Default connection string: `mongodb://127.0.0.1:27017/spare_room`
 ### 1. Clone and Install
 ```bash
 git clone <repository-url>
-cd SpareRoom
+cd SpareRoomClone
 npm install
 ```
 
@@ -92,13 +104,13 @@ SESSION_SECRET=your-super-secret-session-key-change-this-in-production
 # Environment
 NODE_ENV=development
 
-# Optional: Google Maps API Key (for map feature)
+# Google Maps API Key (required by validateEnv.js)
 # Get your key from: https://console.cloud.google.com/google/maps-apis
-# If not provided, the map feature will be disabled
+# Use a dummy value during local development if the map feature is disabled
 MAPS_API_KEY=your-google-maps-api-key-here
 ```
 
-**Note**: The application validates required environment variables (`MONGO_URL`, `SESSION_SECRET`) at startup. If any are missing, the app will exit with an error message.
+**Note**: The application validates required environment variables (`MONGO_URL`, `SESSION_SECRET`, `MAPS_API_KEY`) at startup. If any are missing, the app will exit with an error message.
 
 ### 3. Database Setup
 This clears the collection and inserts a few sample listings.
@@ -157,52 +169,54 @@ The application comes with 3 sample listings:
 - Luxury Ensuite Room in Oxford (£850/month)
 - Cozy Room with Balcony in Bristol (£780/month)
 
-## 🌐 API Routes
+## 🌐 Routes Overview
 
-| Method | Route | Handler | Description |
-|--------|-------|---------|-------------|
-| GET | `/` | inline | Welcome page with navigation |
-| GET | `/list/listing` | `getAllListings` | Display all property listings |
-| GET | `/list/newlisting` | `newListing` | Show create listing form |
-| POST | `/list/createlisting` | `createListing` | Create new listing |
-| GET | `/list/:id` | `showListingDetails` | Show single listing details |
-| GET | `/list/:id/editlisting` | `editListing` | Show edit listing form |
-| PUT | `/list/:id` | `updateListing` | Update existing listing |
-| DELETE | `/list/:id` | `deleteListing` | Delete listing |
-
-### Auth Routes
-| Method | Route | Handler | Description |
-|--------|-------|---------|-------------|
-| GET | `/auth/register` | `renderRegister` | Render register page |
-| POST | `/auth/registerUser` | `registerUser` | Register a new user |
-| GET | `/auth/login` | `renderLogin` | Render login page |
-| POST | `/auth/loginUser` | `loginUser` | Login a user |
-| POST | `/auth/logout` | `logout` | Logout current user |
+| Method | Route | Handler | Middleware | Description |
+|--------|-------|---------|------------|-------------|
+| GET | `/` | inline | – | Welcome page with navigation |
+| GET | `/list/listing` | `getAllListings` | – | Display all property listings |
+| GET | `/list/newlisting` | `newListing` | `isLoggedIn` | Show create listing form |
+| POST | `/list/createlisting` | `createListing` | `isLoggedIn`, `validate(listSchema)` | Create new listing |
+| GET | `/list/:id` | `showListingDetails` | – | Show single listing details |
+| GET | `/list/:id/editlisting` | `editListing` | `isLoggedIn`, `isOwner` | Show edit listing form |
+| PUT | `/list/:id` | `updateListing` | `isLoggedIn`, `isOwner`, `validate(listSchema)` | Update listing |
+| DELETE | `/list/:id` | `deleteListing` | `isLoggedIn`, `isOwner` | Delete listing |
+| GET | `/auth/register` | `renderRegister` | – | Render register page |
+| POST | `/auth/registerUser` | `registerUser` | `validate(registerSchema)` | Register a new user |
+| GET | `/auth/login` | `renderLogin` | – | Render login page |
+| POST | `/auth/loginUser` | `loginUser` | `validate(loginSchema)` | Login a user |
+| POST | `/auth/logout` | `logout` | – | Logout current user |
+| GET | `/profile/:id` | `renderProfile` | – | Show landlord/tenant profile with aggregated reviews |
+| POST | `/profile/reviews/:id` | `submitReviews` | `isLoggedIn`, `validate(reviewSchema)` | Submit a review for the specified user |
 
 ## 🧱 Project Structure
 
 ```
-SpareRoom/
+SpareRoomClone/
 ├── app.js                      # Main application entry point
 ├── package.json                # Dependencies and scripts
 ├── config/
 │   ├── connectDB.js           # MongoDB connection configuration
-│   ├── session.js             # Session configuration
 │   ├── flash.js               # Flash messages setup
-│   └── validateEnv.js         # Environment variable validation
+│   ├── session.js             # Session configuration
+│   └── validateEnv.js         # Environment variable validation (requires MAPS_API_KEY)
 ├── controllers/
 │   ├── authController.js      # Auth views and session control
-│   └── listController.js      # Listing operations
+│   ├── listController.js      # Listing operations
+│   ├── profileController.js   # Profile aggregation
+│   └── reviewController.js    # Review submission flow
 ├── initDB/
 │   └── initDB.js              # Database initialization script
 ├── joiSchemas/
 │   ├── listSchema.js          # Joi validation schema for listings
+│   ├── reviewSchema.js        # Joi validation schema for reviews
 │   └── userSchema.js          # Joi validation schema for users
 ├── middleware/
 │   ├── auth.js                # isLoggedIn and isOwner guards
 │   └── validateSchema.js      # Generic Joi validator
 ├── models/
 │   ├── listModel.js           # Mongoose schema for listings
+│   ├── reviewModel.js         # Mongoose schema for reviews
 │   ├── sampleData/
 │   │   └── sampleData.js      # Sample property data
 │   └── userModel.js           # Mongoose schema for users
@@ -214,29 +228,34 @@ SpareRoom/
 │       └── script.js          # Client-side JavaScript
 ├── routes/
 │   ├── authRoutes.js          # Auth routes
-│   └── listRoutes.js          # Listing routes
+│   ├── listRoutes.js          # Listing routes
+│   └── profileRoutes.js       # Profile and review routes
 ├── services/
+│   ├── authService.js         # User auth logic
 │   ├── listService.js         # Listing DB operations
-│   └── userService.js         # User auth logic
+│   ├── profileService.js      # Profile lookups
+│   └── reviewService.js       # Review aggregation and persistence
 ├── utils/
 │   ├── ExpressError.js        # Custom error class
 │   ├── httpStatus.js          # HTTP status helpers
 │   └── wrapAsync.js           # Async error handling wrapper
 └── views/
-    ├── error.ejs              # Error page template
-    ├── partials/
-    │   ├── navbar.ejs         # Navigation component
-    │   └── footer.ejs         # Footer component
     ├── auth/
     │   ├── login.ejs          # Login view
     │   └── register.ejs       # Register view
-    └── listings/
-        ├── listings.ejs       # All listings grid view
-        ├── listingDetail.ejs  # Single listing detail view
-        ├── createlisting.ejs  # Create listing form
-        ├── updatelisting.ejs  # Edit listing form
-        ├── deletelisting.ejs  # Delete confirmation view
-        └── map.ejs            # Map modal partial for property location
+    ├── error.ejs              # Error page template
+    ├── listings/
+    │   ├── createlisting.ejs  # Create listing form
+    │   ├── deletelisting.ejs  # Delete confirmation view
+    │   ├── listingDetail.ejs  # Single listing detail view
+    │   ├── listings.ejs       # All listings grid view
+    │   └── updatelisting.ejs  # Edit listing form
+    ├── partials/
+    │   ├── navbar.ejs         # Navigation component
+    │   └── footer.ejs         # Footer component
+    └── profile/
+        ├── profile.ejs        # Profile detail view
+        └── reviewProfile.ejs  # Review submission view
 ```
 
 ## 🔧 Architecture & Patterns
@@ -320,18 +339,6 @@ The application uses npm scripts for consistency. All scripts are defined in `pa
 - `npm run dev` — Run in development mode with nodemon
 - `npm run init-db` — Seed database with sample listings
 
-## 🌐 Routes
-| Method | Route                      | Handler                         | Description                 |
-| ------ | -------------------------- | --------------------------------| --------------------------- |
-| GET    | `/`                        | inline in `app.js`              | Welcome page                |
-| GET    | `/list`                    | `getAllListings`                | Show all listings           |
-| GET    | `/list/newlisting`         | `newListing`                    | Show create form            |
-| POST   | `/list/createlisting`      | `createListing`                 | Create a new listing        |
-| GET    | `/list/:id`                | `showListingDetails`            | Show listing details        |
-| GET    | `/list/:id/editlisting`    | `editListing`                   | Show edit form              |
-| PUT    | `/list/:id`                | `updateListing`                 | Update listing              |
-| DELETE | `/list/:id`                | `deleteListing`                 | Delete listing              |
-
 ## 🔒 Security Considerations
 
 ### Session Security
@@ -355,7 +362,7 @@ The application uses npm scripts for consistency. All scripts are defined in `pa
 - Never commit `.env` files to version control
 - Use strong, unique `SESSION_SECRET` in production
 - Keep dependencies updated regularly
-- Review security recommendations in `CODE_REVIEW_CURRENT.md`
+- Track open review items in the "Branch Review Summary" above
 
 ## 📞 Support
 
@@ -367,6 +374,6 @@ For questions or issues:
 ---
 
 **Version**: 1.0.0  
-**Last Updated**: October 2025  
+**Last Updated**: March 2025
 **Node.js**: 18+  
 **MongoDB**: Latest

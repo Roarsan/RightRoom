@@ -3,6 +3,16 @@
 ## 📋 Project Overview
 A modern property listings web application inspired by SpareRoom.co.uk, built with Node.js, Express, MongoDB, and EJS templating. The application follows clean MVC architecture and provides comprehensive CRUD operations for property listings with responsive design, error handling, and input validation.
 
+## 🔍 Branch Review Findings (`work`)
+
+The latest review of the `work` branch surfaced the following actionable items:
+
+- **Import omissions in `reviewService`** — The service throws `ExpressError` with `httpStatus` codes but never imports either dependency. Import them or replace the guard with a simple falsy check to avoid a `ReferenceError` when the guard executes.
+- **Average rating guard rail** — `reviewService.getReviews` divides the sum of ratings by `reviewCount`. When there are no reviews the code returns `NaN`, which bubbles into `profile/profile.ejs`. Add a zero-review fallback to keep the UI predictable.
+- **Remove unused session import** — `controllers/reviewController.js` requires `express-session` even though the configured session middleware already injects `req.session`. Drop the unused import to silence linter warnings.
+- **Profile error short-circuit** — `profileController.renderProfile` fetches reviews immediately after loading a user. When `profileService` throws a 404 the second query still runs. Early-return after the throw or wrap the fetches in `Promise.allSettled` to avoid redundant work.
+- **Docs needed refresh** — README/notes previously referenced `CODE_REVIEW_CURRENT.md` (no longer in the repo) and omitted the new profile/review flow. Both documents now reflect the active implementation.
+
 ## 🏗️ Architecture & Tech Stack
 
 ### Backend
@@ -28,26 +38,30 @@ A modern property listings web application inspired by SpareRoom.co.uk, built wi
 ## 📁 Project Structure
 
 ```
-SpareRoom/
+SpareRoomClone/
 ├── app.js                      # Main application entry point
 ├── config/
 │   ├── connectDB.js           # MongoDB connection
-│   ├── session.js             # Session configuration
 │   ├── flash.js               # Flash messages setup
+│   ├── session.js             # Session configuration
 │   └── validateEnv.js         # Environment variable validation
 ├── controllers/
 │   ├── authController.js      # Auth views and session control
-│   └── listController.js      # Listing business logic
+│   ├── listController.js      # Listing business logic
+│   ├── profileController.js   # Profile page aggregation (user + reviews)
+│   └── reviewController.js    # Review submission workflow
 ├── initDB/
 │   └── initDB.js              # DB seed script
 ├── joiSchemas/
 │   ├── listSchema.js          # Listing validation
+│   ├── reviewSchema.js        # Review validation rules
 │   └── userSchema.js          # User validation
 ├── middleware/
 │   ├── auth.js                # isLoggedIn, isOwner
-│   └── validateSchema.js      # Joi validator
+│   └── validateSchema.js      # Joi validator factory
 ├── models/
 │   ├── listModel.js           # Listing schema
+│   ├── reviewModel.js         # Review schema with reviewer references
 │   ├── sampleData/
 │   │   └── sampleData.js      # Seed data
 │   └── userModel.js           # User schema
@@ -56,32 +70,37 @@ SpareRoom/
 │   │   └── main.css           # Custom styling
 │   └── js/
 │       ├── map.js             # Google Maps integration
-│       └── script.js           # Client-side JavaScript
+│       └── script.js          # Client-side JavaScript
 ├── routes/
 │   ├── authRoutes.js          # Auth routes
-│   └── listRoutes.js          # Listing routes
+│   ├── listRoutes.js          # Listing routes
+│   └── profileRoutes.js       # Profile + review routes
 ├── services/
+│   ├── authService.js         # Auth logic (bcrypt)
 │   ├── listService.js         # Listing DB ops
-│   └── userService.js         # Auth logic (bcrypt)
+│   ├── profileService.js      # User lookup utilities
+│   └── reviewService.js       # Review aggregation + persistence
 ├── utils/
 │   ├── ExpressError.js        # Custom error class
 │   ├── httpStatus.js          # HTTP status helpers
 │   └── wrapAsync.js           # Async wrapper
 └── views/
-    ├── error.ejs              # Error page
-    ├── partials/
-    │   ├── navbar.ejs
-    │   └── footer.ejs
     ├── auth/
-    │   ├── login.ejs
-    │   └── register.ejs
-    └── listings/
-        ├── listings.ejs
-        ├── listingDetail.ejs
-        ├── createlisting.ejs
-        ├── updatelisting.ejs
-        ├── deletelisting.ejs
-        └── map.ejs              # Map modal partial for property location
+    │   ├── login.ejs          # Login view
+    │   └── register.ejs       # Register view
+    ├── error.ejs              # Error page
+    ├── listings/
+    │   ├── createlisting.ejs
+    │   ├── deletelisting.ejs
+    │   ├── listingDetail.ejs
+    │   ├── listings.ejs
+    │   └── updatelisting.ejs
+    ├── partials/
+    │   ├── footer.ejs
+    │   └── navbar.ejs
+    └── profile/
+        ├── profile.ejs        # Profile overview + aggregated reviews
+        └── reviewProfile.ejs  # Review submission form (modal)
 ```
 
 ## 🗄️ Database Schema
@@ -133,6 +152,12 @@ SpareRoom/
 | POST | `/auth/loginUser` | loginUser | validate(loginSchema) | Authenticate user |
 | POST | `/auth/logout` | logout | - | Logout current user |
 
+### Profile & Review Routes
+| Method | Route | Handler | Middleware | Description |
+|--------|-------|---------|------------|-------------|
+| GET | `/profile/:id` | renderProfile | - | Render a user's public profile with aggregated review data |
+| POST | `/profile/reviews/:id` | submitReviews | isLoggedIn, validate(reviewSchema) | Create a review targeting the specified user |
+
 ## 🔧 Key Components
 
 ### Error Handling System
@@ -157,6 +182,7 @@ SpareRoom/
 - **Joi Schemas**: Server-side validation for all form inputs
   - `listSchema.js` - Validates listing data (title, image, address, price, description)
   - `userSchema.js` - Validates user registration and login data
+  - `reviewSchema.js` - Validates review submission payloads
 - **Validation Rules**:
   - Listing: title (min 3 chars), image (URI), price (min 0), required fields
   - User: username (3-30 chars), email (valid format), password (min 6 chars)
@@ -224,7 +250,7 @@ SpareRoom/
 ```bash
 # Clone and install
 git clone <repository-url>
-cd SpareRoom
+cd SpareRoomClone
 npm install
 
 # Environment setup
@@ -372,12 +398,14 @@ NODE_ENV=development  # Environment mode (development or production)
 5. **No API Documentation**: No Swagger/OpenAPI documentation
 6. **No Testing**: No unit or integration tests
 7. **API Key Exposure**: Google Maps API key exposed client-side (should be restricted in Google Cloud Console)
+8. **Review Aggregation Edge Case**: Profiles without reviews surface `NaN` average ratings until a guard is added
 
 ### Technical Debt
 - **Code Duplication**: Some template code is duplicated in listings.ejs
 - **Error Handling**: Could be more granular for different error types
 - **Validation**: Could include more sophisticated validation rules
 - **Performance**: No caching or database optimization
+- **Import Hygiene**: Missing imports in `reviewService.js` cause runtime risk when guards execute
 
 ### Potential Improvements
 1. **Rate Limiting**: Add express-rate-limit to authentication endpoints
@@ -497,6 +525,6 @@ NODE_ENV=development  # Environment mode (development or production)
 ---
 
 **Version**: 1.0.0  
-**Last Updated**: October 2025  
+**Last Updated**: March 2025
 **Node.js**: 18+  
 **MongoDB**: Latest
