@@ -1,4 +1,4 @@
-const authService = require("../services/userService");
+const authService = require("../services/authService");
 
 const authController = {
   renderRegister: (req, res) => {
@@ -24,6 +24,7 @@ const authController = {
   },
 
   logout: (req, res) => {
+    req.flash("success", "You have been logged out");
    req.session.destroy(() => res.redirect("/"));
   }
 };

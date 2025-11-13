@@ -9,20 +9,17 @@ const getAllListings = async () => {
 
 // Get a single listing by ID
 const getListingById = async (id) => {
-  const listing = await ListModel.findById(id);
+  const listing = await ListModel.findById(id).populate('owner');
   if (!listing) {
     throw new ExpressError(httpStatus.NOT_FOUND.code, 'Listing not found.');
   }
   return listing;
 };
 
-// Save a new listing to the db
+// Save a new listing to the db and return it
 const createListing = async (data) => {
   const newList = new ListModel(data);
   const saved = await newList.save();
-  if (!saved) {
-    throw new ExpressError(httpStatus.BAD_REQUEST.code, 'Failed to create listing.');
-  }
   return saved;
 };
 

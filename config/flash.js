@@ -8,7 +8,13 @@ function setupFlash(app) {
   app.use((req, res, next) => {
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
-    res.locals.currentUser = !!req.session.userId;
+
+    // ✅ true/false - convenience for templates
+    res.locals.isLoggedIn = Boolean(req.session.userId);
+
+
+    // ✅ actual logged-in user ID (used for comparisons)
+    res.locals.userId = req.session.userId || null;
     next();
   });
 }

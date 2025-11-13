@@ -1,0 +1,41 @@
+
+    <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="reviewModalLabel">
+              <i class="bi bi-star me-2"></i>Leave a Review for <%= profile.username %>
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+
+          <form action="/profile/reviews/<%= profile._id %>" method="POST" class="p-3 bg-white rounded shadow-sm review-validation" novalidate>
+            <div class="modal-body bg-light">
+              <div class="mb-3">
+                <label for="rating" class="form-label fw-semibold">Rating</label>
+                <select name="rating" id="rating" class="form-select" required>
+                  <option value="">Select rating</option>
+                  <% for (let i=1; i <=5; i++) { %>
+                    <option value="<%= i %>">
+                      <%= i %> ⭐
+                    </option>
+                    <% } %>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="comment" class="form-label fw-semibold">Comment</label>
+                <textarea name="comment" id="comment" class="form-control" rows="3"
+                  placeholder="Write your experience..." required>
+              </textarea>
+              </div>
+            </div>
+
+            <div class="modal-footer bg-light border-top-0">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-success">Submit Review</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
