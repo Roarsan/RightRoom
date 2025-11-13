@@ -1,4 +1,3 @@
-const session = require('express-session');
 const reviewService = require('../services/reviewService');
 
 const reviewController = {

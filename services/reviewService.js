@@ -1,4 +1,6 @@
 const ReviewModel = require("../models/reviewModel");
+const ExpressError = require('../utils/ExpressError');
+const httpStatus = require('../utils/httpStatus');
 
 const reviewService = {
   getReviews: async (id) => {
@@ -15,9 +17,10 @@ const reviewService = {
 
     let total = 0;
     for (let r of userDetails) {
-      total += r.rating;
+      total += r.rating || 0;
     }
-    const avgRating = total / reviewCount;
+    //fallback when reviewCount is 0
+    const avgRating = reviewCount > 0 ? total / reviewCount : 0;
 
     return {
       userDetails,
