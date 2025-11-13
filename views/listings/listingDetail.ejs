@@ -1,55 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpareRoom - <%= list.title %></title>
+  <title>SpareRoom - <%= list.title %>
+  </title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="/css/main.css" />
 </head>
+
 <body class="bg-light">
 
   <!-- Navbar -->
   <%- include('../partials/navbar') %>
 
-  <div class="container mt-5">
-    <%- include('../partials/alert') %>
+    <div class="container mt-5">
 
-    <div class="card mx-auto shadow-sm" style="max-width: 600px;">
-      <img src="<%= list.image %>" class="card-img-top" alt="<%= list.title %>" />
-      <div class="card-body">
-        <h4 class="card-title fw-bold"><%= list.title %></h4>
-        <p class="text-muted mb-2">
-          <%= list.address %>
-          <a href="#" class="ms-2" data-bs-toggle="modal" data-bs-target="#mapModal">Show in map</a>
-        </p>
-        <h5 class="text-primary fw-bold">£<%= list.price %> / month</h5>
-        <p class="mt-3"><%= list.description %></p>
+      <div class="card mx-auto shadow-sm" style="max-width: 600px;">
+        <img src="<%= list.image %>" class="card-img-top" alt="<%= list.title %>" />
+        <div class="card-body">
+          <h4 class="card-title fw-bold">
+            <%= list.title %>
+          </h4>
+          <p class="text-muted mb-2">
+            <%= list.address %>
+              <a href="#" class="ms-2" data-bs-toggle="modal" data-bs-target="#mapModal">Show in map</a>
+          </p>
+          <h5 class="text-primary fw-bold">£<%= list.price %> / month</h5>
+          <p class="mt-3">
+            <%= list.description %>
+          </p>
+          <hr />
+          <div class="d-flex align-items-center mt-3">
+            <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="User Avatar" width="45" height="45"
+              class="rounded-circle border me-3" />
+            <div>
+              <strong>Posted by:</strong>
+              <a href="/profile/<%= list.owner._id %>" class="text-decoration-none text-primary fw-semibold">
+                <%= list.owner.username %>
+              </a>
+              <div class="text-muted small text-capitalize">
+                <%= list.owner.role %>
+              </div>
+            </div>
+          </div>
+          <% if (isLoggedIn && list.owner) { %>
+          <div class="d-flex justify-content-center gap-3 mt-4">
+            <a href="/list/<%= list._id %>/editlisting" class="btn btn-outline-primary">Update</a>
+            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+              Delete
+            </button>
+          </div>
+          <% } %>
+        </div>
       </div>
+
+      <!-- Delete modal -->
+      <%- include('deletelisting', { list: list }) %>
+
+        <!-- Map modal -->
+        <%- include('map', { list: list }) %>
     </div>
 
-    <div class="d-flex justify-content-center gap-3 mt-4">
-      <a href="/list/<%= list._id %>/editlisting" class="btn btn-outline-primary">Update</a>
-      <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
-        Delete
-      </button>
-    </div>
+    <%- include('../partials/footer') %>
 
-    <!-- Delete modal -->
-    <%- include('deletelisting', { list: list }) %>
 
-    <!-- Map modal -->
-    <%- include('map', { list: list }) %>
-  </div>
-
-  <%- include('../partials/footer') %>
-
-  <script src="/js/map.js"></script>
-  <script
-    src="https://maps.googleapis.com/maps/api/js?key=<%= process.env.MAPS_API_KEY %>"
-    async
-    defer>
-  </script>
+      <script src="https://maps.googleapis.com/maps/api/js?key=<%= process.env.MAPS_API_KEY %>" async defer
+        onerror="console.error('Failed to load Google Maps API')">
+        </script>
+      <script src="/js/map.js"></script>
 </body>
+
 </html>
