@@ -29,6 +29,8 @@ app.use(express.json());
 app.use(express.static("public"));
 app.use(methodOverride("_method"));
 
+app.set("trust proxy", 1);
+
 // Sessions
 setupSession(app);
 

@@ -14,9 +14,9 @@ function setupSession(app){
     resave: false,
     saveUninitialized: false,
     cookie: {
-      httpOnly: true,       // prevent client-side JS access
-      secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
-      sameSite: 'strict',   // CSRF protection
+      httpOnly: true,      
+      secure: process.env.NODE_ENV === 'production', 
+      sameSite: 'none',   
       maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
     },
   }));
