@@ -9,6 +9,8 @@ const profile_Routes= require("./routes/profileRoutes")
 const setupSession = require('./config/session');
 const setupFlash = require('./config/flash');
 const ExpressError = require('./utils/ExpressError');
+const wrapAsync = require("./utils/wrapAsync");
+const listController = require("./controllers/listController");
 
 // Validate environment variables before starting
 validateEnv();
