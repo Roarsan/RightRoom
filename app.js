@@ -9,7 +9,6 @@ const profile_Routes= require("./routes/profileRoutes")
 const setupSession = require('./config/session');
 const setupFlash = require('./config/flash');
 const ExpressError = require('./utils/ExpressError');
-const profileController = require('./controllers/profileController');
 
 // Validate environment variables before starting
 validateEnv();
@@ -35,9 +34,7 @@ setupSession(app);
 setupFlash(app);
 
 // Routes
-app.get("/", (req, res) => {
-  res.send("Welcome to SpareRoom Clone! <a href='/list/listing'>View Listings</a>");
-});
+app.get("/", wrapAsync(listController.getAllListings) );
 app.use("/list", list_Routes);
 app.use("/auth", auth_Routes);
 app.use("/profile",profile_Routes);
