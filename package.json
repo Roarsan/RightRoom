@@ -1,4 +1,7 @@
 {
+  "engine":{
+"node": "22.14.0"
+  },
   "name": "spareroom",
   "version": "1.0.0",
   "description": "A modern property listings web application with user authentication",
