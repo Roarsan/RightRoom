@@ -1,11 +1,11 @@
 # 🏠 RightRoom
 
-A modern property listings web application inspired by [SpareRoom.co.uk](https://www.spareroom.co.uk).  
-Built with **Express.js**, **MongoDB**, and **EJS**, following clean MVC architecture with **Bootstrap 5** styling and custom CSS.  
-A fully functional application for managing property listings with responsive design and comprehensive error handling.
+A modern property listings platform inspired by SpareRoom, built with Node.js, Express, MongoDB, and EJS following a  MVC + Services architecture.
+RightRoom enables users to create listings, manage profiles, leave reviews, and explore locations with Google Maps integration.
 
 ## ✨ Live Demo
 Visit `http://localhost:8080` after running the application to see the live demo.
+or Visit `https://rightroom.onrender.com` to see it live on render.
 
 ## 🚀 Tech Stack
 
@@ -15,6 +15,8 @@ Visit `http://localhost:8080` after running the application to see the live demo
 - **Mongoose 8.18.0** — MongoDB ODM for database operations
 - **express-session 1.18.2** — Session management
 - **connect-mongo 5.1.0** — MongoDB session store
+- **bcrypt 6.0.0** — Password Encryption
+- **connect-flash 0.1.1* - Flash Messages
 - **method-override 3.0.0** — Support for PUT and DELETE HTTP methods
 - **Joi 18.0.1** — Data validation and schema validation
 - **dotenv 17.2.3** — Environment variable management
@@ -27,8 +29,9 @@ Visit `http://localhost:8080` after running the application to see the live demo
 - **Google Maps JavaScript API** — Interactive map display for property locations
 
 ### Database
-- **MongoDB** — NoSQL database for storing property listings
-- **Default Connection**: `mongodb://127.0.0.1:27017/spare_room`
+- **MongoDB** — NoSQL database for storing property listings,reviews and users info.
+- **MongoAtlas** — NoSQL Cloud database for storing property listings,reviews and users info.
+
 
 ## 🧩 Features
 
@@ -67,9 +70,6 @@ Visit `http://localhost:8080` after running the application to see the live demo
 
 1. **Local MongoDB**: Install MongoDB locally and run `mongod`
 
-
-Default connection string: `mongodb://127.0.0.1:27017/spare_room`
-
 ## 🧰 Installation & Setup
 
 ### 1. Clone and Install
@@ -83,13 +83,13 @@ npm install
 Create a `.env` file in the root directory:
 ```bash
 # Server Configuration
-PORT=8080
+PORT=8080 || Prefered Port
 
 # Database Configuration
-MONGO_URL=mongodb://127.0.0.1:27017/spare_room
+MONGO_URL=mongodb://your mongodb connection/
 
 # Session Configuration
-SESSION_SECRET=your-super-secret-session-key-change-this-in-production
+SESSION_SECRET=your-super-secret-session-key
 
 # Environment
 NODE_ENV=development
@@ -97,12 +97,12 @@ NODE_ENV=development
 # Optional: Google Maps API Key (for map feature)
 # Get your key from: https://console.cloud.google.com/google/maps-apis
 # If not provided, the map feature will be disabled
-MAPS_API_KEY=your-google-maps-api-key-here
+MAPS_API_KEY=your-google-maps-api-key
 ```
 
 **Note**: The application validates required environment variables (`MONGO_URL`, `SESSION_SECRET`) at startup. If any are missing, the app will exit with an error message.
 
-### 3. Database Setup
+### 3. Seed Database (Optional)
 This clears the collection and inserts a few sample listings.
 ```bash
 # Using npm script
@@ -117,11 +117,8 @@ This clears the collection and inserts a few sample listings.
 ### 4. Start the Application
 ```bash
 # Development mode with auto-restart (recommended)
-npm run dev
+npm run dev || nodemon app.js
 
-# Production mode
-npm start
-```
 
 ### 5. Access the Application
 Open your browser and navigate to: `http://localhost:8080`
@@ -148,11 +145,26 @@ Open your browser and navigate to: `http://localhost:8080`
   username: String (required, unique)  // User's username
   email: String (required, unique)      // User's email (lowercase, trimmed)
   password: String (required)           // Hashed password (bcrypt)
+  role: String,enum: ['tenant', 'landlord'](required)
+  avgRating: Number (required, min: 0)
+  reviewCount: Number (required, min: 0)
+  comment:String (required)
   createdAt: Date (auto-generated)      // Creation timestamp
   updatedAt: Date (auto-generated)      // Last update timestamp
 }
 ```
+### Review Model
 
+```javascript
+{
+reviewer: ObjectId (required)      // Reference to User who reviewed the listing
+reviewed: ObjectId (required)      // Reference to User who created the listing
+rating: Number(required)
+comment : String (required)
+createdAt: Date (auto-generated)      // Creation timestamp
+updatedAt: Date (auto-generated)      // Last update timestamp
+}
+```
 ### Sample Data
 The application comes with 3 sample listings:
 - Spacious Two-Bedroom Flat in Manchester (£950/month)
@@ -223,7 +235,7 @@ RightRoom/
 │   │   └── main.css           # Custom styling
 │   └── js/
 │       ├── map.js             # Google Maps integration
-│       └── script.js          # Client-side JavaScript
+│       └── script.js          # Client-side Validation JavaScript
 ├── routes/
 │   ├── authRoutes.js          # Auth routes
 │   └── listRoutes.js          # Listing routes
@@ -258,9 +270,10 @@ RightRoom/
 ## 🔧 Architecture & Patterns
 
 ### MVC Architecture
-- **Model**: `models/listModel.js` — Data structure and validation
+- **Model**: Mongoose models in  `models/` directory — Schemas and mongoose validation
 - **View**: EJS templates in `views/` directory — User interface
-- **Controller**: `controllers/listController.js` — Business logic and request handling
+- **Controller**: Request handling in `controllers/` directory — Request handling
+- **Services**: Business logic in `servies/` directory — Business logic 
 
 ### Error Handling
 - **Custom Error Class**: `ExpressError` for consistent error responses
@@ -301,7 +314,7 @@ RightRoom/
 ### Environment Variables
 
 #### Required Variables
-- `PORT` — Server port (defaults to 8080 if not set)
+- `PORT` — Server port (Preferred Port)
 - `MONGO_URL` — MongoDB connection string
 - `SESSION_SECRET` — Secret key for session encryption
 - `MAPS_API_KEY` — Google Maps API key for map feature 
@@ -340,7 +353,7 @@ The application uses npm scripts for consistency. All scripts are defined in `pa
 ## 🔒 Security Considerations
 
 ### Session Security
-- Sessions are stored in MongoDB for persistence
+- Sessions are stored in MongoDB || MongoAtlas for persistence dependes upon development || production
 - Secure cookies are enabled in production (`NODE_ENV=production`)
 - `httpOnly` flag prevents client-side JavaScript access
 - `sameSite: 'strict'` provides CSRF protection
