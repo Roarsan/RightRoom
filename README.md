@@ -66,13 +66,7 @@ or Visit `https://rightroom.onrender.com` to see it live on render.
 - **MongoDB||MongoAtlas** — Running locally or on cloud connection
 - **npm** — Comes with Node.js
 
-## 🚀 Development
-
-### MongoDB Setup Options
-
-1. **Local MongoDB**: Install MongoDB locally and run `mongod`
-
-## 🧰 Installation & Setup
+## 🚀 Development & Setup
 
 ### 1. Clone and Install
 ```bash
@@ -80,6 +74,10 @@ git clone <repository-url>
 cd RightRoom
 npm install
 ```
+### 2. MongoDB Setup Options
+
+1. **Local MongoDB**: Install MongoDB locally and run `mongod`
+2. **MongoAtlas**: Signup in MongoAtlas create new project and deploy a cluster
 
 ### 2. Environment Setup
 
