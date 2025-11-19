@@ -63,8 +63,10 @@ or Visit `https://rightroom.onrender.com` to see it live on render.
 ## ✅ Prerequisites
 
 - **Node.js 18+** — Download from [nodejs.org](https://nodejs.org/)
-- **MongoDB** — Running locally or MongoDB Atlas connection
+- **MongoDB||MongoAtlas** — Running locally or on cloud connection
 - **npm** — Comes with Node.js
+
+## 🚀 Development
 
 ### MongoDB Setup Options
 
@@ -80,19 +82,29 @@ npm install
 ```
 
 ### 2. Environment Setup
+
+**Note**: The application validates required environment variables (`MONGO_URL`, `SESSION_SECRET`) at startup. If any are missing, the app will exit with an error message.
+
+#### Required Variables
+- `PORT` — Server port (Preferred Port)
+- `MONGO_URL` — MongoDB connection string
+- `SESSION_SECRET` — Secret key for session encryption
+- `MAPS_API_KEY` — Google Maps API key for map feature 
+
 Create a `.env` file in the root directory:
 ```bash
+
 # Server Configuration
 PORT=8080 || Prefered Port
 
 # Database Configuration
-MONGO_URL=mongodb://your mongodb connection/
+MONGO_URL=mongodb://your mongodb||mongoAtlas connection/
 
 # Session Configuration
 SESSION_SECRET=your-super-secret-session-key
 
 # Environment
-NODE_ENV=development
+NODE_ENV=development|| production
 
 # Optional: Google Maps API Key (for map feature)
 # Get your key from: https://console.cloud.google.com/google/maps-apis
@@ -100,7 +112,9 @@ NODE_ENV=development
 MAPS_API_KEY=your-google-maps-api-key
 ```
 
-**Note**: The application validates required environment variables (`MONGO_URL`, `SESSION_SECRET`) at startup. If any are missing, the app will exit with an error message.
+**Security Note**: 
+- In production, set `NODE_ENV=production` to enable secure session cookies
+- The `MAPS_API_KEY` is exposed client-side. If using Google Maps, restrict the API key in Google Cloud Console to your domain only.
 
 ### 3. Seed Database (Optional)
 This clears the collection and inserts a few sample listings.
@@ -308,46 +322,6 @@ RightRoom/
 - **Mobile First**: Bootstrap's mobile-first approach
 - **Breakpoints**: xs, sm, md, lg, xl
 - **Grid System**: Bootstrap's 12-column grid
-
-## 🚀 Development
-
-### Environment Variables
-
-#### Required Variables
-- `PORT` — Server port (Preferred Port)
-- `MONGO_URL` — MongoDB connection string
-- `SESSION_SECRET` — Secret key for session encryption
-- `MAPS_API_KEY` — Google Maps API key for map feature 
-
-#### Optional Variables
-- `NODE_ENV` — Environment mode (`development` or `production`)
-
-**Note**: The application validates required environment variables at startup. If `MONGO_URL`,`MAPS_API_KEY` and `SESSION_SECRET` are missing, the app will exit with an error message.
-
-**Security Note**: 
-- In production, set `NODE_ENV=production` to enable secure session cookies
-- The `MAPS_API_KEY` is exposed client-side. If using Google Maps, restrict the API key in Google Cloud Console to your domain only.
-
-### Available npm Scripts
-```bash
-# Install dependencies
-npm install
-
-# Start development server (with auto-restart)
-npm run dev
-
-# Start production server
-npm start
-
-# Seed database with sample data
-npm run init-db
-```
-
-### Development Scripts
-The application uses npm scripts for consistency. All scripts are defined in `package.json`:
-- `npm start` — Run in production mode
-- `npm run dev` — Run in development mode with nodemon
-- `npm run init-db` — Seed database with sample listings
 
 
 ## 🔒 Security Considerations
